@@ -1,7 +1,4 @@
-sk-W9py-83L4rXN4cWS7Y_nEKfQ6SCncKhFY12w7HNfJlGRoX9M2-roqF8fnQH5KzmEWVueN12ZUOZVLQdDah1HbQ
-
-
-
+import os
 import asyncio
 import logging
 from aiogram import Bot, Dispatcher, types
@@ -10,39 +7,44 @@ from aiogram.methods import DeleteWebhook
 from aiogram.types import Message
 from openai import OpenAI
 
+# Получаем токены из переменных окружения
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-TOKEN = '7989376133:AAGhQL1YFcdeXcJozCaDFYoxX-Q7KJIHKzQ' # ⁡⁢⁡⁢⁣⁣ПОМЕНЯЙТЕ ТОКЕН БОТА НА ВАШ⁡
+# Проверка наличия токенов
+if not BOT_TOKEN or not OPENAI_API_KEY:
+    raise ValueError("Переменные окружения BOT_TOKEN и OPENAI_API_KEY должны быть установлены")
 
+# Настройка логгирования
 logging.basicConfig(level=logging.INFO)
-bot = Bot(TOKEN)
+
+# Инициализация бота и диспетчера
+bot = Bot(BOT_TOKEN)
 dp = Dispatcher()
 
-
-# ⁡⁢⁣⁡⁢⁣⁣ОБРАБОТЧИК КОМАНДЫ СТАРТ⁡⁡
+# Обработчик команды /start
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
-    await message.answer('Привет! Я бот с подключенной нейросетью, отправь свой запрос', parse_mode = 'HTML')
+    await message.answer("Привет! Я бот с подключенной нейросетью. Отправь свой запрос.", parse_mode="HTML")
 
-
-# ⁡⁢⁣⁣ОБРАБОТЧИК ЛЮБОГО ТЕКСТОВОГО СООБЩЕНИЯ⁡
+# Обработчик всех текстовых сообщений
 @dp.message(lambda message: message.text)
-async def filter_messages(message: Message):
+async def handle_message(message: Message):
     client = OpenAI(
-    base_url = "https://api.langdock.com/openai/eu/v1",
-    api_key = "sk-W9py-83L4rXN4cWS7Y_nEKfQ6SCncKhFY12w7HNfJlGRoX9M2-roqF8fnQH5KzmEWVueN12ZUOZVLQdDah1HbQ" # ⁡⁢⁣⁣ПОМЕНЯЙТЕ ТОКЕН ИИ НА ВАШ⁡
+        base_url="https://api.langdock.com/openai/eu/v1",
+        api_key=OPENAI_API_KEY
     )
 
     completion = client.chat.completions.create(
-    model="gpt-4",
-    messages=[
-        {"role": "user", "content": message.text}
-    ]
+        model="gpt-4",
+        messages=[
+            {"role": "user", "content": message.text}
+        ]
     )
-    text = completion.choices[0].message.content
+    reply = completion.choices[0].message.content
+    await message.answer(reply, parse_mode="Markdown")
 
-    await message.answer(text, parse_mode = "Markdown")
-
-
+# Основной запуск бота
 async def main():
     await bot(DeleteWebhook(drop_pending_updates=True))
     await dp.start_polling(bot)
