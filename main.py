@@ -36,7 +36,7 @@ async def handle_message(message: Message):
     )
 
     completion = client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-4o",
         messages=[
             {"role": "user", "content": message.text}
         ]
